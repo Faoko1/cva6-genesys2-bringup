@@ -147,8 +147,7 @@ License
 Docs/scripts in this repo: MIT. Upstream IP retains its own licenses.
 
 
-When you’re ready, we can tweak tone/sections, or add a short “Results” section with a photo/serial log screenshot.
-::contentReference[oaicite:0]{index=0}
+
 
 
 
