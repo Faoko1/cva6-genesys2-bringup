@@ -4,15 +4,6 @@ Reproducible notes for building OpenHW CVA6 (v5.3) on Digilent Genesys-2: bit/mc
 
 # CVA6 (OpenHW v5.3.0) on Digilent Genesys-2 — Build & Bring-Up
 
-This repo documents my **repeatable** steps to synthesize the OpenHW **CVA6** APU, generate a **Genesys-2** bitstream/MCS, flash it, and boot via UART. It’s meant for reviewers and employers to see a clean, professional process.
-
-> Upstream CVA6: https://github.com/openhwgroup/cva6 (tag `v5.3.0`)  
-> Board: Digilent Genesys-2 (XC7K325T)
-
----
-
-# CVA6 (OpenHW v5.3.0) on Digilent Genesys-2 — Build & Bring-Up
-
 This repository documents my **reproducible process** to synthesize the OpenHW **CVA6** APU, generate a **Genesys-2** (Kintex-7 XC7K325T) bitstream/MCS, flash it, and boot via UART. It’s written so reviewers/employers can quickly see a clean flow and the issues I solved.
 
 > Upstream CVA6: https://github.com/openhwgroup/cva6 (tag `v5.3.0`)  
