@@ -75,4 +75,82 @@ export MAKEFLAGS="-j${NTHREADS}"
 # Vivado environment (if needed)
 [ -f "$XILINX_VIVADO/settings64.sh" ] && source "$XILINX_VIVADO/settings64.sh"
 
+If you maintain an env.sh, source it from the CVA6 repo root so $CVA6_REPO_DIR resolves correctly.
+
+
+
+
+
+Build bitstream + MCS (Genesys-2)
+
+Run from the CVA6 repo root (the fpga target lives in the top-level Makefile):
+
+make fpga BOARD=genesys2
+
+
+Outputs:
+
+corev_apu/fpga/work-fpga/ariane_xilinx.bit
+
+corev_apu/fpga/work-fpga/ariane_xilinx.mcs
+
+Supported boards (v5.3.0): genesys2, kc705, vc707, nexys_video
+Use: make fpga BOARD=<name>
+
+Flash / Program in Vivado
+
+Program QSPI flash (power-on boot):
+
+Set JP5 = JTAG.
+
+Vivado → Hardware Manager → Open Target (Auto-connect).
+
+Tools → Add Configuration Memory Device → select s25fl256xxxxxx0 → choose ariane_xilinx.mcs → Program.
+
+Set JP5 = QSPI and power-cycle to boot from flash.
+
+Program .bit over JTAG (one-off):
+
+With JP5 = JTAG, Hardware Manager → Program Device → select ariane_xilinx.bit.
+
+Console / Boot
+
+Connect USB-UART; open at 115200 baud (PuTTY on Windows, screen /dev/ttyUSB* 115200 on Linux/macOS).
+
+If using an SD-card OS image (Linux/Zephyr), insert it and watch the boot log.
+
+Troubleshooting (what I hit & fixed)
+
+Submodules missing →
+git submodule update --init --recursive --checkout
+
+hpdcache_pkg enums “not declared” → ensure:
+
+export HPDCACHE_DIR=$CVA6_REPO_DIR/core/cache_subsystem/hpdcache
+export HPDCACHE_TARGET_CFG=$CVA6_REPO_DIR/core/include/cv64a6_imafdc_sv39_hpdcache_config_pkg.sv
+
+
+then make clean && make fpga BOARD=genesys2.
+
+Vivado/IP mismatches → try 2018.2 or regenerate IP cleanly.
+
+No UART output → check baud, COM port, cable, jumper (QSPI vs JTAG), and SD seating.
+
+Notes
+
+This repo does not vendor CVA6/third-party IP; it documents the bring-up process I executed.
+
+See upstream repositories for source and licenses.
+
+License
+
+Docs/scripts in this repo: MIT. Upstream IP retains its own licenses.
+
+
+When you’re ready, we can tweak tone/sections, or add a short “Results” section with a photo/serial log screenshot.
+::contentReference[oaicite:0]{index=0}
+
+
+
+
 
