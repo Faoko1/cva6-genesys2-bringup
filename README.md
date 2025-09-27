@@ -26,3 +26,23 @@ cd cva6
 # Make sure submodules match the meta-commit
 git submodule sync --recursive
 git submodule update --init --recursive --checkout
+
+
+
+
+
+# paths
+export CVA6_REPO_DIR=$PWD
+export RISCV=/opt/riscv                              # <-- edit for your machine
+export XILINX_VIVADO=/opt/Xilinx/Vivado/2018.2       # <-- edit for your machine
+
+# HPDcache: use the pinned submodule + known-good config
+export HPDCACHE_DIR=$CVA6_REPO_DIR/core/cache_subsystem/hpdcache
+export HPDCACHE_TARGET_CFG=$CVA6_REPO_DIR/core/include/cv64a6_imafdc_sv39_hpdcache_config_pkg.sv
+
+# threads (optional)
+export NTHREADS="${NTHREADS:-$(nproc)}"
+export MAKEFLAGS="-j${NTHREADS}"
+
+# Vivado environment (if needed)
+[ -f "$XILINX_VIVADO/settings64.sh" ] && source "$XILINX_VIVADO/settings64.sh"
