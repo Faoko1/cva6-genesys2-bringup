@@ -11,12 +11,55 @@ This repo documents my **repeatable** steps to synthesize the OpenHW **CVA6** AP
 
 ---
 
-## Quick Start
+# CVA6 (OpenHW v5.3.0) on Digilent Genesys-2 — Build & Bring-Up
 
-1. **Clone CVA6 (v5.3.0) with submodules**
-   ```bash
-   git clone --branch v5.3.0 --depth 1 --recurse-submodules https://github.com/openhwgroup/cva6
-   cd cva6
-   git submodule sync --recursive
-   git submodule update --init --recursive --checkout
+This repository documents my **reproducible process** to synthesize the OpenHW **CVA6** APU, generate a **Genesys-2** (Kintex-7 XC7K325T) bitstream/MCS, flash it, and boot via UART. It’s written so reviewers/employers can quickly see a clean flow and the issues I solved.
+
+> Upstream CVA6: https://github.com/openhwgroup/cva6 (tag `v5.3.0`)  
+> Board: Digilent Genesys-2 (XC7K325T)
+
+---
+
+## Contents
+
+- [Prerequisites](#prerequisites)  
+- [Clone CVA6 (v5.3.0) with submodules](#clone-cva6-v530-with-submodules)  
+- [Environment (example)](#environment-example)  
+- [Build bitstream + MCS (Genesys-2)](#build-bitstream--mcs-genesys2)  
+- [Flash / Program in Vivado](#flash--program-in-vivado)  
+- [Console / Boot](#console--boot)  
+- [Troubleshooting I actually hit](#troubleshooting-i-actually-hit)  
+- [Results (optional to include screenshots)](#results-optional-to-include-screenshots)  
+- [Attribution & License](#attribution--license)
+
+---
+
+## Prerequisites
+
+- **Xilinx Vivado**  
+  Upstream validated Genesys-2 flow with **2018.2**. Newer versions (e.g., 2024.x) can work but may require IP regeneration and minor tweaks.
+- **RISC-V toolchain**  
+  `RISCV` environment variable should point to your RISC-V toolchain prefix (for software/bootrom).
+- **Git with submodules**  
+  You must clone with submodules and keep them in sync.
+
+Optional but helpful:
+- `screen` or PuTTY for serial, `nproc` for threads, a fast temp directory (e.g., `/scratch` or `/dev/shm`).
+
+---
+
+## Clone CVA6 (v5.3.0) with submodules
+
+```bash
+# Choose a working dir
+mkdir -p ~/work/cva6 && cd ~/work/cva6
+
+# Clone the exact tag with submodules
+git clone --branch v5.3.0 --depth 1 --recurse-submodules https://github.com/openhwgroup/cva6
+cd cva6
+
+# Make sure submodules match the meta-commit
+git submodule sync --recursive
+git submodule update --init --recursive --checkout
+
 
