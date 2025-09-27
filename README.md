@@ -45,11 +45,11 @@ cd cva6
 git submodule sync --recursive
 git submodule update --init --recursive --checkout
 
+--- 
 
 
 
-
-Environment (example)
+## Environment (example)
 
 From the CVA6 repo root:
 # paths
