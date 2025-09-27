@@ -31,6 +31,9 @@ git submodule update --init --recursive --checkout
 
 
 
+Environment (example)
+
+From the CVA6 repo root:
 # paths
 export CVA6_REPO_DIR=$PWD
 export RISCV=/opt/riscv                              # <-- edit for your machine
