@@ -134,9 +134,5 @@ To make sure the board auto-boots Linux every time:
 2. Configure U-Boot environment so it automatically loads kernel + DTB  
 3. Save that environment so it persists across boots
 
-Two common methods:
 
-### Option A: U-Boot “Distro Boot” (extlinux)
-
-- On the SD card, in the BOOT (FAT) partition:
 
