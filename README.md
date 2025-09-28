@@ -155,6 +155,9 @@ To make sure the board auto-boots Linux every time:
   - Use the search box in the “Add Configuration Memory Device” dialog to filter by “s25fl256”  
   - Pick the variant ending in **0** that supports SPI x1, x2, and x4
 
+- **Process gets stuck on "Copying Boot Image Done"**  
+  - Flash the sd card properly or use a different one.
+    
 ---
 
 ## Suggestions / To-Do
