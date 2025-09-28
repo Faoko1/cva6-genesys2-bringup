@@ -1,142 +1,142 @@
-# cva6-genesys2-bringup
-Reproducible notes for building OpenHW CVA6 (v5.3) on Digilent Genesys-2: bit/mcs build, flashing, boot, and troubleshooting
+# cva6-genesys2-bringup  
+Reproducible notes for building OpenHW CVA6 (v5.3) on Digilent Genesys-2: bit / mcs build, flashing, boot, and troubleshooting
 
 # CVA6 (OpenHW v5.3.0) on Digilent Genesys-2 — Build & Bring-Up
 
-This repository documents my **reproducible process** to synthesize the OpenHW **CVA6** APU, generate a **Genesys-2** (Kintex-7 XC7K325T) bitstream/MCS, flash it, and boot via UART—so reviewers/employers can quickly see a clean flow and the issues I solved.
+This repository documents my **reproducible process** to synthesize the OpenHW **CVA6** APU, generate a **Genesys-2** (Kintex-7 XC7K325T) bitstream/MCS, flash it, and boot via UART — so reviewers, collaborators, or maintainers can follow exactly, spot issues, or reproduce reliably.
 
-> Upstream CVA6: https://github.com/openhwgroup/cva6 (tag `v5.3.0`)  
-> Board: Digilent Genesys-2 (XC7K325T)
-
----
-
-## Prerequisites
-
-- **Xilinx Vivado** — upstream validated Genesys-2 flow with **2018.2**. Newer versions (e.g., 2024.x) can work but may require IP regeneration/tweaks.  
-- **RISC-V toolchain** — set the `RISCV` environment variable to your toolchain prefix (for software/bootrom).  
-- **Git with submodules** — clone with submodules and keep them in sync.
-
-*Helpful:* `screen` or PuTTY for serial, `nproc` for threads, a fast temp directory (e.g., `/scratch` or `/dev/shm`).
+Upstream: https://github.com/openhwgroup/cva6 (tag `v5.3.0`)  
+Target board: Digilent Genesys-2 (XC7K325T)
 
 ---
 
-## Clone CVA6 (v5.3.0) with submodules
+## Prerequisites & Environment Setup
+
+- **Vivado / Xilinx toolchain**  
+  The upstream Genesys-2 FPGA flow is validated on **Vivado 2018.2**; newer versions may work but may require IP regeneration or tweaks.  
+- **RISC-V cross toolchain**  
+  Set your `RISCV` environment variable to your RISC-V toolchain prefix.  
+- **Git + submodules**  
+  Clone with submodules (or init them) so all supporting IP is present.  
+- **Useful extras**  
+  - Use fast local temporary storage (e.g. `/scratch`, `/dev/shm`) for Vivado build artifacts  
+  - Use `screen` or PuTTY for serial logs  
+  - Use `nproc` / parallel make for faster builds
+
+Example setup (place in an `env.sh` or run manually before builds):
 
 ~~~bash
-# Choose a working dir
-mkdir -p ~/work/cva6 && cd ~/work/cva6
-
-# Clone the exact tag with submodules
-git clone --branch v5.3.0 --depth 1 --recurse-submodules https://github.com/openhwgroup/cva6
-cd cva6
-
-# Make sure submodules match the meta-commit
-git submodule sync --recursive
-git submodule update --init --recursive --checkout
-~~~
-
----
-
-## Environment (example)
-
-Run these **from the CVA6 repo root**:
-
-~~~bash
-# Paths
 export CVA6_REPO_DIR=$PWD
-export RISCV=/opt/riscv                              # <-- edit for your machine
-export XILINX_VIVADO=/opt/Xilinx/Vivado/2018.2       # <-- edit for your machine
+export RISCV=/opt/riscv
+export XILINX_VIVADO=/opt/Xilinx/Vivado/2018.2
 
-# HPDcache: use the pinned submodule + known-good config
 export HPDCACHE_DIR=$CVA6_REPO_DIR/core/cache_subsystem/hpdcache
 export HPDCACHE_TARGET_CFG=$CVA6_REPO_DIR/core/include/cv64a6_imafdc_sv39_hpdcache_config_pkg.sv
 
-# Threads (optional)
 export NTHREADS="${NTHREADS:-$(nproc)}"
 export MAKEFLAGS="-j${NTHREADS}"
 
-# Vivado environment (if needed)
 [ -f "$XILINX_VIVADO/settings64.sh" ] && source "$XILINX_VIVADO/settings64.sh"
 
-# Optional: fast temp/cache (Linux)
-if [ -d "/scratch" ]; then FAST="/scratch/${USER}/vivado_fast"; else FAST="/dev/shm/${USER}/vivado_fast"; fi
+if [ -d "/scratch" ]; then
+  FAST="/scratch/${USER}/vivado_fast"
+else
+  FAST="/dev/shm/${USER}/vivado_fast"
+fi
 mkdir -p "$FAST/tmp" "$FAST/.Xil"
 export TMPDIR="$FAST/tmp"
 export XILINX_LOCAL_USER_DATA="$FAST/.Xil"
 export XILINX_LOCAL_CACHE_DIR="$FAST/.Xil"
 ~~~
 
-> If you maintain an `env.sh`, **source it from the CVA6 repo root** so `$CVA6_REPO_DIR` resolves correctly.
+Run the above from **inside the CVA6 repo root** so relative paths work.
 
 ---
 
-## Build bitstream + MCS (Genesys-2)
+## Clone CVA6 (v5.3.0) & Submodules
 
-Run from the **CVA6 repo root** (the `fpga` target lives in the top-level Makefile):
+~~~bash
+mkdir -p ~/work/cva6 && cd ~/work/cva6
+git clone --branch v5.3.0 --depth 1 --recurse-submodules https://github.com/openhwgroup/cva6
+cd cva6
+git submodule sync --recursive
+git submodule update --init --recursive --checkout
+~~~
+
+Ensure all submodules (especially IP, hpdcache, tools) are correct before building.
+
+---
+
+## Build Bitstream & MCS
+
+From the CVA6 root directory:
 
 ~~~bash
 make fpga BOARD=genesys2
 ~~~
 
-**Outputs:**
+This should produce:
+
 - `corev_apu/fpga/work-fpga/ariane_xilinx.bit`  
 - `corev_apu/fpga/work-fpga/ariane_xilinx.mcs`
 
-**Other supported boards (v5.3.0):** `kc705`, `vc707`, `nexys_video`  
-Build for another board with: `make fpga BOARD=<name>`
+These files are your FPGA configuration outputs: `.bit` for volatile JTAG loads, `.mcs` for flash.
 
 ---
 
-## Flash / Program in Vivado
+## FPGA Flashing & Bitstream Programming (Vivado)
 
-**Program QSPI flash (for power-on boot):**
+### Flash the `.mcs` into QSPI flash (persistent boot)
 
-1. Set **JP5 = JTAG**.  
-2. Vivado → **Hardware Manager** → Open Target (Auto-connect).  
-3. **Tools → Add Configuration Memory Device** → select `s25fl256xxxxxx0` → choose `ariane_xilinx.mcs` → **Program**.  
-4. Set **JP5 = QSPI** and **power-cycle** to boot from flash.
+1. Set **JP5 = JTAG**, power on the board.  
+2. In Vivado: **Hardware Manager → Open Target → Auto Connect**  
+3. Add configuration memory device:  
+   - Right-click FPGA → **Add Configuration Memory Device…**  
+   - Select `s25fl256sxxxxxx0-spi-x1_x2_x4` (the 256 Mbit QSPI flash memory)  
+   - Confirm  
+4. Program the flash:  
+   - Right-click the flash device → **Program Configuration Memory Device…**  
+   - Set **Configuration file** to `ariane_xilinx.mcs`  
+   - Leave **PRM file** blank (unless you created one)  
+   - Under options: enable **Erase**, **Program**, **Verify** (optionally **Blank Check**)  
+   - Choose **Configuration File Only**  
+   - Use **Pull-down** for non-config I/O pin state  
+   - Click **OK / Program**  
+5. After successful programming, set **JP5 = QSPI**, then **power-cycle** the board. Now the FPGA should auto-load from QSPI at each boot.  
+6. (Optional) Press **PROG** to force reload from flash manually.
 
-**Program .bit over JTAG (one-off):**
+> Note: “Configuration File Only” restricts operations to only the flash region covered by the `.mcs`, making the process safer and faster.  
+> Vivado uses an indirect configuration mechanism: it loads a mini SPI writer into the FPGA using JTAG, then streams your `.mcs` into flash.
 
-- With **JP5 = JTAG**, Hardware Manager → **Program Device** → select `ariane_xilinx.bit`.
+### Program `.bit` over JTAG (for fast iteration)
 
----
-
-## Console / Boot
-
-- Connect USB-UART; open at **115200** baud (PuTTY on Windows, `screen /dev/ttyUSB* 115200` on Linux/macOS).  
-- If using an SD-card OS image (Linux/Zephyr), insert it and watch the boot log.
-
----
-
-## Troubleshooting I actually hit
-
-- **Submodules missing**
-  ~~~bash
-  git submodule update --init --recursive --checkout
-  ~~~
-
-- **`hpdcache_pkg` enums “not declared”** — ensure:
-  ~~~bash
-  export HPDCACHE_DIR=$CVA6_REPO_DIR/core/cache_subsystem/hpdcache
-  export HPDCACHE_TARGET_CFG=$CVA6_REPO_DIR/core/include/cv64a6_imafdc_sv39_hpdcache_config_pkg.sv
-  ~~~
-  then:
-  ~~~bash
-  make clean && make fpga BOARD=genesys2
-  ~~~
-
-- **Vivado/IP mismatches** — try **2018.2** or regenerate IP cleanly.  
-- **No UART output** — check baud, COM port, cable, jumper (QSPI vs JTAG), and SD seating.
+- Keep **JP5 = JTAG**  
+- In Vivado Hardware Manager → **Program Device…**  
+- Select `ariane_xilinx.bit`, click **Program**  
+- This is volatile and won't persist after reboot, but is great during development.
 
 ---
 
-## Notes
+## Boot / Console
 
-This repo does **not** vendor CVA6/third-party IP; it documents the bring-up process I executed. See upstream repositories for source and licenses.
+- Connect the USB-UART cable (FTDI) to your host machine  
+- Use PuTTY (Windows) or `screen /dev/ttyUSB* 115200` (Linux/macOS) at **115200** baud  
+- If your OS is on an SD card, insert it  
+- On power-up (with JP5 = QSPI), you should see: FPGA configuring → U-Boot → OpenSBI → Linux logs on the serial console
 
 ---
 
-## License
+## Persistent Boot: Always Load OS
 
-Docs/scripts in this repo: **MIT**. Upstream IP retains its own licenses.
+To make sure the board auto-boots Linux every time:
+
+1. Ensure the FPGA is set to auto load (JP5 = QSPI, `.mcs` programmed)  
+2. Configure U-Boot environment so it automatically loads kernel + DTB  
+3. Save that environment so it persists across boots
+
+Two common methods:
+
+### Option A: U-Boot “Distro Boot” (extlinux)
+
+- On the SD card, in the BOOT (FAT) partition:
+
