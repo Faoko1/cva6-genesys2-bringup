@@ -136,3 +136,31 @@ To make sure the board auto-boots Linux every time:
 
 
 
+## Troubleshooting & Lessons Learned
+
+- **“sbi_trap_error: hart0: trap handler failed (error –2)”**  
+  This occurs **after** “Starting kernel …” and usually means there is a mismatch between the DTB, memory map, OpenSBI, or kernel entry address — not typically a jumper or flash configuration issue.
+
+- **No or garbled UART output**  
+  - Verify that baud is set to **115200**  
+  - Ensure the UART base address in the DTB matches your hardware  
+  - If `earlycon=` is not enabled and early console fails, the kernel might crash before console initialization
+
+- **FPGA does not load bitstream from flash**  
+  - Check that **JP5** is set to **QSPI**  
+  - Make sure your `.mcs` was successfully written into the flash device  
+  - Press the **PROG** button to force a reconfiguration from flash manually
+
+- **Vivado cannot find the correct flash part**  
+  - Use the search box in the “Add Configuration Memory Device” dialog to filter by “s25fl256”  
+  - Pick the variant ending in **0** that supports SPI x1, x2, and x4
+
+---
+
+## Suggestions / To-Do
+
+- Document **jumper settings** (JP5, JP4) and when to use each position  
+- Insert your exact working `extlinux.conf` or `bootcmd` snippet that reliably boots Linux  
+- Add a “lessons learned” summary explaining how you resolved traps, what pitfalls to watch out for, etc.  
+- Include your Vivado version and submodule commit hashes for reproducibility  
+- (Optional) Describe how to embed the Linux payload inside OpenSBI (using `FW_PAYLOAD`) to bypass U-Boot entirely  
